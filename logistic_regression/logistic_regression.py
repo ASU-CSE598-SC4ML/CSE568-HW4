@@ -5,10 +5,9 @@ import crypten.communicator as comm
 
 # Simulate two parties running secure logistic regression
 @mpc.run_multiprocess(world_size=2)
-def logistic_regression(w, sample, alpha):
+def logistic_regression(w_enc, sample, alpha):
     party = comm.get().get_rank()
     # Create shares of the initial w value (weights)
-    w_enc = crypten.cryptensor([w], ptype=mpc.arithmetic)
     print(f'Party {party}: has w share {w_enc}')
 
     # Choose a random sample and secret share it
@@ -19,7 +18,10 @@ def logistic_regression(w, sample, alpha):
     # Step 1: compute x * w
     s1 = sample_enc[0] * w_enc
 
-    # Step 2: compute f(x * w)
+    # Step 2: compute f(x * w), where f is a custom function that replaces the sigmoid function
+    # If s1 < -0.5 -> f = 0
+    #       >  0.5 -> f = 1
+    #         else -> f = s1 + 0.5
     if (s1 < -0.5).get_plain_text().item() == 1.0:
         s2 = crypten.cryptensor([0], ptype=mpc.arithmetic)
     elif (s1 > 0.5).get_plain_text().item() == 1.0:
