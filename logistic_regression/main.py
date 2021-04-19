@@ -1,6 +1,7 @@
 import crypten
-from logistic_regression import logistic_regression
-from random import choice
+import torch
+
+from logistic_regression import LogisticRegression
 
 training_samples = [[4, 10],
                     [6, 12],
@@ -11,18 +12,12 @@ init_w = 10
 
 
 def main():
+    # Init Crypten and disable OpenMP threads (needed by @mpc.run_multiprocess
     crypten.init()
-    w_enc = crypten.cryptensor([init_w])
-    print('Secure logistic regression training starting!')
+    torch.set_num_threads(1)
 
-    # Randomly iterate through all training samples (without repetition)
-    while len(training_samples) != 0:
-        sample = choice(training_samples)
-        training_samples.remove(sample)
-        logistic_regression(w_enc, sample, alpha)
-
-    print('Training finished!')
-    print(f'The end result (w) is: {w_enc}, plaintext: {w_enc.get_plain_text()}')
+    lr = LogisticRegression()
+    lr.train(init_w, training_samples, alpha)
 
 
 if __name__ == '__main__':
